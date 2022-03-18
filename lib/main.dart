@@ -2,6 +2,7 @@
 
 import 'package:admin_aplikasi_food/add_food.dart';
 import 'package:admin_aplikasi_food/dashboard.dart';
+import 'package:admin_aplikasi_food/search.dart';
 import 'package:admin_aplikasi_food/update.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
       routes: {
         "/": (context) => Dashboard(),
         "/post": (context) => AddFood(),
+        "/search":(context) => Search(data: ModalRoute.of(context)?.settings.arguments as String),
         "/update": (context) =>
             new Update(data: ModalRoute.of(context)?.settings.arguments as Map),
       },

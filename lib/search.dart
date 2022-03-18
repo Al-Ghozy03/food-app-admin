@@ -1,20 +1,18 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, unused_import
-
-import 'dart:developer';
+// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, prefer_const_constructors_in_immutables, use_key_in_widget_constructors, sized_box_for_whitespace
 
 import 'package:admin_aplikasi_food/firebase_service.dart';
-import 'package:admin_aplikasi_food/update.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class Dashboard extends StatefulWidget {
-  const Dashboard({Key? key}) : super(key: key);
+class Search extends StatefulWidget {
+  final String data;
+  Search({required this.data});
 
   @override
-  State<Dashboard> createState() => _DashboardState();
+  State<Search> createState() => _SearchState();
 }
 
-class _DashboardState extends State<Dashboard> {
+class _SearchState extends State<Search> {
   final Stream<QuerySnapshot> getData =
       FirebaseFirestore.instance.collection('makanan').snapshots();
   @override
@@ -27,6 +25,11 @@ class _DashboardState extends State<Dashboard> {
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.connectionState == ConnectionState.active) {
             var listData = snapshot.data!.docs;
+            var view = listData
+                .where((element) => element["nama"]
+                    .toLowerCase()
+                    .contains(widget.data.toLowerCase()))
+                .toList();
             return SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
@@ -34,37 +37,31 @@ class _DashboardState extends State<Dashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("List food",
+                      Text("Search : ${widget.data} ",
                           style: TextStyle(
                               fontFamily: "popins semi",
                               fontSize: width / 12,
                               color: Color(0xff2941CA))),
                       SizedBox(height: height / 100),
-                      TextField(
-                        onSubmitted: (value) => Navigator.pushNamed(context, "/search",arguments: value),
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15)
-                          ),
-                          hintText: "Search...",
-                          prefixIcon: Icon(Icons.search)
-                        ),
-                      ),
-                      SizedBox(height: height / 100),
-                      Container(
-                        height: width*1.5,
-                        width: width,
-                        child: ListView.builder(
-                          itemCount: listData.length,
-                          itemBuilder: (context, i) {
-                            Map<String, dynamic> data = snapshot.data!.docs[i]
-                                .data()! as Map<String, dynamic>;
-                            Map value = {"id": listData[i].id, "data": data};
-                            return _listData(
-                                context, width, data, listData[i].id, value);
-                          },
-                        ),
-                      )
+                      view.isEmpty
+                          ? Center(child: Text("kosong",style: TextStyle(fontSize: width/10,color: Colors.grey,fontWeight: FontWeight.w700)))
+                          : Container(
+                              height: width * 1.5,
+                              width: width,
+                              child: ListView.builder(
+                                itemCount: view.length,
+                                itemBuilder: (context, i) {
+                                  Map<String, dynamic> data =
+                                      view[i].data()! as Map<String, dynamic>;
+                                  Map value = {
+                                    "id": listData[i].id,
+                                    "data": data
+                                  };
+                                  return _listData(context, width, data,
+                                      listData[i].id, value);
+                                },
+                              ),
+                            )
                     ],
                   ),
                 ),
@@ -76,13 +73,6 @@ class _DashboardState extends State<Dashboard> {
             );
           }
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Color(0xff2941CA),
-        onPressed: () {
-          Navigator.pushNamed(context, "/post");
-        },
-        child: Icon(Icons.add),
       ),
     );
   }

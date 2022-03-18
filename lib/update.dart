@@ -22,23 +22,40 @@ class _UpdateState extends State<Update> {
   TextEditingController daerah = TextEditingController();
   FirebaseStorage storage = FirebaseStorage.instance;
   String url = "";
+  bool isLoading = false;
+  File? path;
 
   void addPhoto() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
+    setState(() {
+      isLoading = true;
+    });
     if (result != null) {
       File file = File(result.files.single.path!);
       String nama = result.files.first.name;
+      setState(() {
+        path = file;
+      });
       url = nama;
       try {
         await storage.ref("uploads/$nama").putFile(file);
         final data = await storage.ref("uploads/$nama").getDownloadURL();
         url = data;
+        setState(() {
+          isLoading = false;
+        });
       } on FirebaseException catch (e) {
+        setState(() {
+          isLoading = false;
+        });
         print("gagal");
         print(e);
       }
     } else {
       print("tidak memilih file");
+        setState(() {
+          isLoading = false;
+        });
     }
   }
 
@@ -78,21 +95,26 @@ class _UpdateState extends State<Update> {
               _field("Promo", height, promo),
               _field("Rating", height, rating),
               _field("Daerah", height, daerah),
-              Image.network(
+             path == null? Image.network(
                 url,
                 height: height / 5,
-              ),
+              ):Image.file(path!,height: height/5,),
               SizedBox(
                 height: height / 30,
               ),
-              ElevatedButton(
-                onPressed: () => addPhoto(),
-                child: Text(
-                  "Update photo",
-                  style: TextStyle(fontSize: width / 30),
-                ),
-                style: ElevatedButton.styleFrom(
-                    primary: Color(0xff2941CA), padding: EdgeInsets.all(10)),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () => addPhoto(),
+                    child: Text(
+                      "Update photo",
+                      style: TextStyle(fontSize: width / 30),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                        primary: Color(0xff2941CA), padding: EdgeInsets.all(10)),
+                  ),
+                  Text(isLoading?"loading..":"")
+                ],
               ),
               SizedBox(
                 height: 20,

@@ -1,8 +1,6 @@
 // ignore_for_file: prefer_const_constructors, duplicate_ignore, unused_local_variable, prefer_const_literals_to_create_immutables, sized_box_for_whitespace, avoid_print
 
-import 'dart:developer';
 import 'dart:io';
-
 import 'package:admin_aplikasi_food/firebase_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -23,29 +21,45 @@ class _AddFoodState extends State<AddFood> {
   TextEditingController daerah = TextEditingController();
   FirebaseStorage storage = FirebaseStorage.instance;
   String url = "";
+  bool isLoading = false;
+  File? path;
 
   void addPhoto() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null) {
+      setState(() {
+        isLoading = true;
+      });
       File file = File(result.files.single.path!);
       String nama = result.files.first.name;
       url = nama;
+      setState(() {
+        path = file;
+      });
       try {
         await storage.ref("uploads/$nama").putFile(file);
         final data = await storage.ref("uploads/$nama").getDownloadURL();
         url = data;
+        setState(() {
+          isLoading = false;
+        });
       } on FirebaseException catch (e) {
         print("gagal");
         print(e);
+        setState(() {
+          isLoading = false;
+        });
       }
     } else {
       print("tidak memilih file");
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    log(url.toString());
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
@@ -69,15 +83,25 @@ class _AddFoodState extends State<AddFood> {
               _field("Promo", height, promo),
               _field("Rating", height, rating),
               _field("Daerah", height, daerah),
-              ElevatedButton(
-                onPressed: () => addPhoto(),
-                child: Text(
-                  "Add photo",
-                  style: TextStyle(fontSize: width / 30),
-                ),
-                style: ElevatedButton.styleFrom(
-                    primary: Color(0xff2941CA), padding: EdgeInsets.all(10)),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () => addPhoto(),
+                    child: Text(
+                      "Add photo",
+                      style: TextStyle(fontSize: width / 30),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                        primary: Color(0xff2941CA),
+                        padding: EdgeInsets.all(10)),
+                  ),
+                  SizedBox(
+                    width: width / 5,
+                  ),
+                  Text(isLoading ? "loading.." : "")
+                ],
               ),
+              path == null ? Container() : Image.file(path!,height: height/5),
               SizedBox(
                 height: 20,
               ),
@@ -92,7 +116,8 @@ class _AddFoodState extends State<AddFood> {
                       int.parse(promo.text),
                       int.parse(rating.text),
                       daerah.text,
-                      url,context),
+                      url,
+                      context),
                   child: Text(
                     "Add",
                     style: TextStyle(fontSize: width / 30),
